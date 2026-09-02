@@ -1,302 +1,210 @@
-
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowLeft, CheckCircle } from "lucide-react";
-import { useCart } from "@/context/CartContext";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 
-export default function CheckoutPage() {
-  const { cartItems, cartCount, cartTotal, clearCart } = useCart();
+import { useCart } from "@/hooks/useCart";
 
-  const [orderPlaced, setOrderPlaced] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
-  });
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.phone || !formData.address) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    setOrderPlaced(true);
-    clearCart();
-  };
-
-  if (orderPlaced) {
-    return (
-      <div className="min-h-screen bg-gray-50 px-4 py-12">
-        <div className="mx-auto max-w-xl rounded-lg bg-white p-8 text-center shadow-sm">
-          <CheckCircle
-            size={64}
-            className="mx-auto text-green-500"
-          />
-
-          <h1 className="mt-5 text-2xl font-bold text-gray-800">
-            Order Placed Successfully!
-          </h1>
-
-          <p className="mt-2 text-sm text-gray-500">
-            Thank you for your order. We will contact you shortly.
-          </p>
-
-          <Link
-            href="/"
-            className="mt-6 inline-flex rounded-md bg-[#6044f0] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#5035d8]"
-          >
-            Continue Shopping
-          </Link>
-        </div>
-      </div>
-    );
-  }
+export default function CartPage() {
+  const {
+    cartItems,
+    cartCount,
+    cartTotal,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+  } = useCart();
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 py-12">
-        <div className="mx-auto max-w-xl rounded-lg bg-white p-8 text-center shadow-sm">
-          <div className="text-5xl">🛒</div>
+      <main className="min-h-screen bg-gray-50 px-4 py-12">
+        <div className="mx-auto max-w-3xl">
+          <div className="rounded-2xl bg-white px-6 py-16 text-center shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#f1efff]">
+              <ShoppingBag size={36} className="text-[#6044f0]" />
+            </div>
 
-          <h1 className="mt-4 text-2xl font-bold text-gray-800">
-            Your cart is empty
-          </h1>
+            <h1 className="mt-6 text-2xl font-bold text-gray-900">
+              Your Cart is Empty
+            </h1>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Add some products to your cart before checkout.
-          </p>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
+              You haven't added any products to your cart yet. Start shopping
+              and add your favorite products.
+            </p>
 
-          <Link
-            href="/"
-            className="mt-6 inline-flex rounded-md bg-[#6044f0] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#5035d8]"
-          >
-            Continue Shopping
-          </Link>
+            <Link
+              href="/"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#6044f0] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#5035d8]"
+            >
+              Start Shopping
+              <ArrowRight size={17} />
+            </Link>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <main className="min-h-screen bg-gray-50 py-8 sm:py-10">
       <div className="mx-auto max-w-6xl px-4">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-7">
           <Link
-            href="/cart"
-            className="mb-4 inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-[#6044f0]"
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-[#6044f0]"
           >
-            <ArrowLeft size={16} />
-            Back to Cart
+            <ArrowLeft size={17} />
+            Continue Shopping
           </Link>
 
-          <h1 className="text-2xl font-bold text-gray-800">
-            Checkout
-          </h1>
+          <div className="mt-5 flex items-end justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+                Shopping Cart
+              </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Complete your information to place your order.
-          </p>
+              <p className="mt-1 text-sm text-gray-500">
+                {cartCount} {cartCount === 1 ? "item" : "items"} in your cart
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={clearCart}
+              className="inline-flex items-center gap-2 text-sm font-medium text-red-500 transition hover:text-red-600"
+            >
+              <Trash2 size={16} />
+              Clear Cart
+            </button>
+          </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Customer Information */}
-          <div className="lg:col-span-2">
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-lg bg-white p-5 shadow-sm"
-            >
-              <h2 className="text-lg font-bold text-gray-800">
-                Delivery Information
-              </h2>
-
-              <div className="mt-5 space-y-4">
-                {/* Name */}
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="mb-1 block text-sm font-medium text-gray-700"
-                  >
-                    Full Name *
-                  </label>
-
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Enter your full name"
-                    className="w-full rounded-md border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6044f0]"
-                    required
-                  />
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="mb-1 block text-sm font-medium text-gray-700"
-                  >
-                    Phone Number *
-                  </label>
-
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="01XXXXXXXXX"
-                    className="w-full rounded-md border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6044f0]"
-                    required
-                  />
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label
-                    htmlFor="address"
-                    className="mb-1 block text-sm font-medium text-gray-700"
-                  >
-                    Delivery Address *
-                  </label>
-
-                  <textarea
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter your complete delivery address"
-                    rows={4}
-                    className="w-full resize-none rounded-md border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6044f0]"
-                    required
-                  />
-                </div>
-
-                {/* City */}
-                <div>
-                  <label
-                    htmlFor="city"
-                    className="mb-1 block text-sm font-medium text-gray-700"
-                  >
-                    City
-                  </label>
-
-                  <input
-                    id="city"
-                    name="city"
-                    type="text"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="Dhaka"
-                    className="w-full rounded-md border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6044f0]"
-                  />
-                </div>
-
-                {/* Payment */}
-                <div>
-                  <h3 className="mb-2 text-sm font-semibold text-gray-800">
-                    Payment Method
-                  </h3>
-
-                  <div className="rounded-md border border-[#6044f0] bg-[#f8f6ff] p-4">
-                    <label className="flex cursor-pointer items-center gap-3">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="cod"
-                        defaultChecked
-                      />
-
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                          Cash on Delivery
-                        </p>
-
-                        <p className="mt-1 text-xs text-gray-500">
-                          Pay when your order arrives.
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Place Order */}
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-[#6044f0] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#5035d8]"
-                >
-                  Place Order
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Order Summary */}
-          <div className="h-fit rounded-lg bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800">
-              Order Summary
-            </h2>
-
-            <div className="mt-4 space-y-4">
+        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          {/* Cart Items */}
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+            <div className="divide-y divide-gray-100">
               {cartItems.map((item) => (
-                <div
+                <article
                   key={item.id}
-                  className="flex gap-3 border-b border-gray-100 pb-4"
+                  className="flex gap-4 p-4 sm:p-5"
                 >
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                    <img
+                  {/* Product Image */}
+                  <Link
+                    href={`/products/${item.slug}`}
+                    className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-28 sm:w-28"
+                  >
+                    <Image
                       src={item.image}
                       alt={item.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="112px"
+                      className="object-cover"
                     />
+                  </Link>
+
+                  {/* Product Information */}
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/products/${item.slug}`}>
+                      <h2 className="line-clamp-2 text-sm font-semibold text-gray-800 transition hover:text-[#6044f0] sm:text-base">
+                        {item.name}
+                      </h2>
+                    </Link>
+
+                    <p className="mt-2 text-sm font-bold text-[#6044f0]">
+                      ৳ {item.price}
+                    </p>
+
+                    {/* Quantity */}
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center overflow-hidden rounded-lg border border-gray-200">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity - 1)
+                          }
+                          className="flex h-9 w-9 items-center justify-center text-gray-600 transition hover:bg-gray-50"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus size={15} />
+                        </button>
+
+                        <span className="flex h-9 min-w-10 items-center justify-center border-x border-gray-200 px-3 text-sm font-semibold text-gray-800">
+                          {item.quantity}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity + 1)
+                          }
+                          className="flex h-9 w-9 items-center justify-center text-gray-600 transition hover:bg-gray-50"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus size={15} />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-red-500 transition hover:text-red-600"
+                      >
+                        <Trash2 size={15} />
+                        Remove
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-medium text-gray-800">
-                      {item.name}
-                    </p>
+                  {/* Item Total */}
+                  <div className="hidden text-right sm:block">
+                    <p className="text-xs text-gray-400">Total</p>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      Qty: {item.quantity}
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-[#6044f0]">
+                    <p className="mt-1 text-base font-bold text-gray-900">
                       ৳ {item.price * item.quantity}
                     </p>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
+          </section>
 
-            <div className="mt-5 flex justify-between border-b border-gray-100 pb-4 text-sm">
-              <span className="text-gray-500">
-                Subtotal ({cartCount} items)
-              </span>
+          {/* Summary */}
+          <aside className="h-fit rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-lg font-bold text-gray-900">
+              Order Summary
+            </h2>
 
-              <span className="font-semibold text-gray-800">
-                ৳ {cartTotal}
-              </span>
+            <div className="mt-5 space-y-3">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Items</span>
+                <span>{cartCount}</span>
+              </div>
+
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Subtotal</span>
+                <span>৳ {cartTotal}</span>
+              </div>
+
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Delivery</span>
+                <span className="font-medium text-green-600">Free</span>
+              </div>
             </div>
 
-            <div className="mt-4 flex justify-between">
-              <span className="font-semibold text-gray-800">
+            <div className="my-5 border-t border-gray-100" />
+
+            <div className="flex items-center justify-between">
+              <span className="text-base font-semibold text-gray-800">
                 Total
               </span>
 
@@ -304,10 +212,22 @@ export default function CheckoutPage() {
                 ৳ {cartTotal}
               </span>
             </div>
-          </div>
+
+            <Link
+              href="/checkout"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6044f0] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#5035d8]"
+            >
+              Proceed to Checkout
+              <ArrowRight size={17} />
+            </Link>
+
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+              <ShoppingBag size={14} />
+              Secure checkout
+            </div>
+          </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-

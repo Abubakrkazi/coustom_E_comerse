@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -19,9 +18,8 @@ export default function WishlistPage() {
   const { addToCart } = useCart();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <main className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-6xl px-4">
-
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -157,7 +155,6 @@ export default function WishlistPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
-

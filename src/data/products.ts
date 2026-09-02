@@ -750,7 +750,10 @@ export const electronicsProducts = products.filter(
 );
 
 export const trendingProducts = products.filter(
-  (product) => product.category === "trending"
+  (product) =>
+    product.badge === "Popular" ||
+    product.badge === "Best Seller" ||
+    product.badge === "New"
 );
 
 export const shavingProducts = products.filter(

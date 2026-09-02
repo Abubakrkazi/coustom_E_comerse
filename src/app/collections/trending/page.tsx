@@ -1,13 +1,26 @@
+"use client";
+
+import { useState } from "react";
+
 import ProductGrid from "@/components/product/ProductGrid";
+import ProductFilters from "@/components/product/ProductFilters";
+
 import CollectionHeader from "@/components/collection/CollectionHeader";
 import Container from "@/components/common/Container";
 import SectionTitle from "@/components/common/SectionTitle";
+
 import { products } from "@/data/products";
 
+const trendingProducts = products.filter(
+  (product) =>
+    product.badge === "Popular" ||
+    product.badge === "Best Seller" ||
+    product.badge === "New"
+);
+
 export default function TrendingPage() {
-  const trendingProducts = products.filter(
-    (product) => product.category === "trending"
-  );
+  const [filteredProducts, setFilteredProducts] =
+    useState(trendingProducts);
 
   return (
     <main className="min-h-screen bg-white">
@@ -18,24 +31,20 @@ export default function TrendingPage() {
 
       <section className="py-8 sm:py-10">
         <Container>
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6">
             <SectionTitle
               title="Trending Products"
-              subtitle={`${trendingProducts.length} products`}
+              subtitle={`${filteredProducts.length} products`}
             />
-
-            <select
-              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-[#6044f0]"
-              defaultValue="featured"
-            >
-              <option value="featured">Featured</option>
-              <option value="low">Price: Low to High</option>
-              <option value="high">Price: High to Low</option>
-            </select>
           </div>
 
-          {trendingProducts.length > 0 ? (
-            <ProductGrid products={trendingProducts} />
+          <ProductFilters
+            products={trendingProducts}
+            onFilter={setFilteredProducts}
+          />
+
+          {filteredProducts.length > 0 ? (
+            <ProductGrid products={filteredProducts} />
           ) : (
             <div className="py-20 text-center">
               <h2 className="text-lg font-semibold text-gray-800">
@@ -43,7 +52,7 @@ export default function TrendingPage() {
               </h2>
 
               <p className="mt-2 text-sm text-gray-500">
-                Trending products will appear here.
+                Try changing your filters.
               </p>
             </div>
           )}

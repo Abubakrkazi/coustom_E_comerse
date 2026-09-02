@@ -1,16 +1,27 @@
-
 "use client";
 
 import Link from "next/link";
-import { CheckCircle, ShoppingBag, ArrowRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+
+import {
+  CheckCircle,
+  ShoppingBag,
+  ArrowRight,
+  Package,
+} from "lucide-react";
 
 export default function OrderSuccessPage() {
+  const searchParams = useSearchParams();
+
+  const orderId = searchParams.get("orderId");
+
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto flex max-w-2xl justify-center">
         <div className="w-full overflow-hidden rounded-2xl bg-white shadow-sm">
           {/* Success Header */}
           <div className="flex flex-col items-center px-6 py-10 text-center">
+            {/* Success Icon */}
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <CheckCircle
                 size={46}
@@ -19,6 +30,7 @@ export default function OrderSuccessPage() {
               />
             </div>
 
+            {/* Title */}
             <h1 className="mt-6 text-3xl font-bold text-gray-900">
               Order Placed Successfully!
             </h1>
@@ -28,10 +40,33 @@ export default function OrderSuccessPage() {
               process it shortly.
             </p>
 
+            {/* Order ID */}
+            {orderId && (
+              <div className="mt-6 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-5 py-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6044f0]/10">
+                  <Package
+                    size={20}
+                    className="text-[#6044f0]"
+                  />
+                </div>
+
+                <div className="text-left">
+                  <p className="text-xs text-gray-400">
+                    Order ID
+                  </p>
+
+                  <p className="mt-1 text-sm font-bold text-gray-900">
+                    {orderId}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Order Status */}
             <div className="mt-6 w-full rounded-xl border border-gray-100 bg-gray-50 p-5">
               <div className="flex items-center justify-center gap-3">
                 <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+
                 <span className="text-sm font-semibold text-gray-800">
                   Order Confirmed
                 </span>
@@ -47,7 +82,8 @@ export default function OrderSuccessPage() {
           <div className="border-t border-gray-100" />
 
           {/* Actions */}
-          <div className="grid gap-3 p-6 sm:grid-cols-2">
+          <div className="grid gap-3 p-6 sm:grid-cols-3">
+            {/* Continue Shopping */}
             <Link
               href="/"
               className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
@@ -56,6 +92,16 @@ export default function OrderSuccessPage() {
               Continue Shopping
             </Link>
 
+            {/* View Orders */}
+            <Link
+              href="/orders"
+              className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#6044f0] hover:text-[#6044f0]"
+            >
+              <Package size={18} />
+              My Orders
+            </Link>
+
+            {/* Explore Products */}
             <Link
               href="/collections/trending"
               className="flex items-center justify-center gap-2 rounded-xl bg-[#6044f0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#5035d8]"
@@ -69,4 +115,3 @@ export default function OrderSuccessPage() {
     </main>
   );
 }
-

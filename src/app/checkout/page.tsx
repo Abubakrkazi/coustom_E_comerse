@@ -1,25 +1,74 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowLeft, CheckCircle2, Lock, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Lock,
+  ShieldCheck,
+} from "lucide-react";
+
+import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 
-type PaymentMethod = "cod" | "bkash" | "nagad" | "card" | "internet-banking";
+type PaymentMethod =
+  | "cod"
+  | "bkash"
+  | "nagad"
+  | "card"
+  | "internet-banking";
 
 export default function CheckoutPage() {
-  const { cartItems, cartCount, cartTotal } = useCart();
+  const router = useRouter();
+
+  const { user, isLoggedIn, isLoading } = useAuth();
+
+  const {
+    cartItems,
+    cartCount,
+    cartTotal,
+    clearCart,
+  } = useCart();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
+
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>("cod");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /*
+   * Protect checkout page
+   * Guest user -> Login page
+   */
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [isLoading, isLoggedIn, router]);
+
+  /*
+   * Auto-fill logged-in user's information
+   */
+  useEffect(() => {
+    if (!isLoading && isLoggedIn && user) {
+      setName(user.name || "");
+      setPhone(user.phone || "");
+    }
+  }, [isLoading, isLoggedIn, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isLoggedIn || !user) {
+      router.replace("/login");
+      return;
+    }
 
     if (cartItems.length === 0) {
       return;
@@ -27,58 +76,124 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
 
-    /*
-      COD:
-      Later we will send order to backend.
+    const order = {
+      id: `ORD-${Date.now()}`,
 
-      Online Payment:
-      Later we will call our payment API here.
-      The API will create a real payment session
-      and redirect the customer to the gateway.
-    */
+      date: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
 
-    if (paymentMethod === "cod") {
-      console.log("COD order", {
+      status: "Processing",
+
+      payment:
+        paymentMethod === "cod"
+          ? "Cash on Delivery"
+          : "Online Payment",
+
+      total: cartTotal,
+
+      customer: {
         name,
         phone,
         address,
         city,
-        cartItems,
-        cartTotal,
-      });
+      },
 
-      setTimeout(() => {
-        setIsSubmitting(false);
-        alert("Order placed successfully!");
-      }, 800);
+      /*
+       * Store logged-in user ID
+       * This will be useful when backend is added later.
+       */
+      userId: user.id,
 
-      return;
-    }
+      items: cartItems,
+    };
 
-    console.log("Online payment", {
-      paymentMethod,
-      name,
-      phone,
-      address,
-      city,
-      cartItems,
-      cartTotal,
-    });
+    try {
+      const savedOrders =
+        localStorage.getItem("rawaj-shop-orders");
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert(
-        "Payment gateway integration will be connected next."
+      const existingOrders = savedOrders
+        ? JSON.parse(savedOrders)
+        : [];
+
+      localStorage.setItem(
+        "rawaj-shop-orders",
+        JSON.stringify([
+          order,
+          ...existingOrders,
+        ])
       );
-    }, 800);
+
+      clearCart();
+
+      /*
+       * Send order ID to success page
+       */
+      router.push(
+        `/order-success?orderId=${order.id}`
+      );
+    } catch (error) {
+      console.error(
+        "Failed to place order:",
+        error
+      );
+
+      alert(
+        "Something went wrong. Please try again."
+      );
+
+      setIsSubmitting(false);
+    }
   };
 
+  /*
+   * While checking authentication
+   */
+  if (isLoading) {
+    return (
+      <main className="flex min-h-[70vh] items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-[#6044f0]" />
+
+          <p className="text-sm text-gray-500">
+            Checking your account...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  /*
+   * Guest user
+   * Redirect is already happening.
+   */
+  if (!isLoggedIn) {
+    return (
+      <main className="flex min-h-[70vh] items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-[#6044f0]" />
+
+          <p className="text-sm text-gray-500">
+            Redirecting to login...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  /*
+   * Cart empty
+   */
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="mx-auto max-w-3xl px-4">
           <div className="rounded-xl bg-white p-10 text-center shadow-sm">
-            <div className="mb-4 text-5xl">🛒</div>
+            <div className="mb-4 text-5xl">
+              🛒
+            </div>
 
             <h1 className="text-2xl font-bold text-gray-800">
               Your cart is empty
@@ -237,13 +352,11 @@ export default function CheckoutPage() {
                       className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6044f0] focus:ring-2 focus:ring-[#6044f0]/10"
                     />
                   </div>
-
                 </div>
               </div>
 
               {/* Payment */}
               <div className="rounded-xl bg-white p-6 shadow-sm">
-
                 <div className="mb-5">
                   <h2 className="text-lg font-bold text-gray-900">
                     Payment Method
@@ -269,7 +382,6 @@ export default function CheckoutPage() {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-
                       <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-100 text-xl">
                         💵
                       </div>
@@ -290,7 +402,6 @@ export default function CheckoutPage() {
                           className="text-[#6044f0]"
                         />
                       )}
-
                     </div>
                   </button>
 
@@ -307,7 +418,6 @@ export default function CheckoutPage() {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-
                       <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-pink-50 text-sm font-bold text-pink-600">
                         ৳
                       </div>
@@ -328,16 +438,13 @@ export default function CheckoutPage() {
                           className="text-[#6044f0]"
                         />
                       )}
-
                     </div>
                   </button>
-
                 </div>
 
                 {/* Online Methods */}
                 {onlinePayment && (
                   <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
-
                     <p className="mb-3 text-sm font-semibold text-gray-800">
                       Select Payment Method
                     </p>
@@ -357,7 +464,6 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2">
-
                           <div className="flex h-10 items-center justify-center text-lg font-extrabold text-pink-600">
                             bKash
                           </div>
@@ -365,7 +471,6 @@ export default function CheckoutPage() {
                           <span className="text-xs text-gray-500">
                             bKash
                           </span>
-
                         </div>
                       </button>
 
@@ -382,7 +487,6 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2">
-
                           <div className="flex h-10 items-center justify-center text-lg font-extrabold text-orange-500">
                             Nagad
                           </div>
@@ -390,7 +494,6 @@ export default function CheckoutPage() {
                           <span className="text-xs text-gray-500">
                             Nagad
                           </span>
-
                         </div>
                       </button>
 
@@ -407,7 +510,6 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2">
-
                           <div className="flex h-10 items-center justify-center text-lg font-extrabold text-blue-600">
                             CARD
                           </div>
@@ -415,7 +517,6 @@ export default function CheckoutPage() {
                           <span className="text-xs text-gray-500">
                             Debit / Credit
                           </span>
-
                         </div>
                       </button>
 
@@ -423,16 +524,18 @@ export default function CheckoutPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          setPaymentMethod("internet-banking")
+                          setPaymentMethod(
+                            "internet-banking"
+                          )
                         }
                         className={`rounded-lg border bg-white p-4 transition ${
-                          paymentMethod === "internet-banking"
+                          paymentMethod ===
+                          "internet-banking"
                             ? "border-indigo-500 ring-2 ring-indigo-100"
                             : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2">
-
                           <div className="flex h-10 items-center justify-center text-sm font-extrabold text-indigo-600">
                             BANK
                           </div>
@@ -440,15 +543,12 @@ export default function CheckoutPage() {
                           <span className="text-xs text-gray-500">
                             Internet Banking
                           </span>
-
                         </div>
                       </button>
-
                     </div>
 
                     {/* Secure Notice */}
                     <div className="mt-4 flex items-start gap-3 rounded-lg border border-green-100 bg-green-50 p-4">
-
                       <ShieldCheck
                         size={20}
                         className="mt-0.5 shrink-0 text-green-600"
@@ -465,9 +565,7 @@ export default function CheckoutPage() {
                           credentials are never stored on our website.
                         </p>
                       </div>
-
                     </div>
-
                   </div>
                 )}
 
@@ -493,25 +591,24 @@ export default function CheckoutPage() {
                   <Lock size={13} />
                   Secure checkout
                 </div>
-
               </div>
-
             </form>
           </div>
 
           {/* RIGHT - ORDER SUMMARY */}
           <div className="h-fit rounded-xl bg-white p-5 shadow-sm">
-
             <h2 className="text-lg font-bold text-gray-900">
               Order Summary
             </h2>
 
             <p className="mt-1 text-xs text-gray-500">
-              {cartCount} {cartCount === 1 ? "item" : "items"}
+              {cartCount}{" "}
+              {cartCount === 1
+                ? "item"
+                : "items"}
             </p>
 
             <div className="mt-5 space-y-4">
-
               {cartItems.map((item) => (
                 <div
                   key={item.id}
@@ -532,11 +629,9 @@ export default function CheckoutPage() {
                   </span>
                 </div>
               ))}
-
             </div>
 
             <div className="mt-5 space-y-3 border-b border-gray-100 pb-5">
-
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">
                   Items
@@ -566,11 +661,9 @@ export default function CheckoutPage() {
                   Free
                 </span>
               </div>
-
             </div>
 
             <div className="mt-5 flex items-center justify-between">
-
               <span className="font-semibold text-gray-900">
                 Total
               </span>
@@ -578,11 +671,9 @@ export default function CheckoutPage() {
               <span className="text-2xl font-bold text-[#6044f0]">
                 ৳ {cartTotal}
               </span>
-
             </div>
 
             <div className="mt-5 rounded-lg bg-gray-50 p-3">
-
               <div className="flex items-center gap-2">
                 <ShieldCheck
                   size={17}
@@ -593,7 +684,6 @@ export default function CheckoutPage() {
                   Safe & Secure Checkout
                 </span>
               </div>
-
             </div>
 
             <Link
@@ -602,9 +692,7 @@ export default function CheckoutPage() {
             >
               ← Back to Cart
             </Link>
-
           </div>
-
         </div>
       </div>
     </div>

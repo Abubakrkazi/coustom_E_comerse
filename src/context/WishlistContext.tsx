@@ -11,6 +11,7 @@ import {
 
 import { Product } from "@/types/product";
 import { WishlistItem } from "@/types/wishlist";
+import { useAuth } from "@/context/AuthContext";
 
 interface WishlistContextType {
   wishlistItems: WishlistItem[];
@@ -30,65 +31,111 @@ interface WishlistProviderProps {
   children: ReactNode;
 }
 
-const WISHLIST_STORAGE_KEY = "rawaj-shop-wishlist";
+const WISHLIST_STORAGE_PREFIX =
+  "rawaj-shop-wishlist";
 
 export function WishlistProvider({
   children,
 }: WishlistProviderProps) {
-  const [wishlistItems, setWishlistItems] = useState<
-    WishlistItem[]
-  >([]);
+  const {
+    user,
+    isLoading: authLoading,
+  } = useAuth();
 
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [wishlistItems, setWishlistItems] =
+    useState<WishlistItem[]>([]);
 
-  // Load wishlist from localStorage
+  const [isLoaded, setIsLoaded] =
+    useState(false);
+
+  // User-specific storage key
+  const wishlistStorageKey = user
+    ? `${WISHLIST_STORAGE_PREFIX}-${user.id}`
+    : null;
+
+  // Load wishlist whenever logged-in user changes
   useEffect(() => {
+    if (authLoading) return;
+
+    setIsLoaded(false);
+
+    if (!wishlistStorageKey) {
+      setWishlistItems([]);
+      setIsLoaded(true);
+      return;
+    }
+
     try {
-      const savedWishlist = localStorage.getItem(
-        WISHLIST_STORAGE_KEY
-      );
+      const savedWishlist =
+        localStorage.getItem(
+          wishlistStorageKey
+        );
 
       if (savedWishlist) {
-        setWishlistItems(JSON.parse(savedWishlist));
+        const parsedWishlist: WishlistItem[] =
+          JSON.parse(savedWishlist);
+
+        setWishlistItems(parsedWishlist);
+      } else {
+        setWishlistItems([]);
       }
     } catch (error) {
-      console.error("Failed to load wishlist:", error);
+      console.error(
+        "Failed to load wishlist:",
+        error
+      );
+      setWishlistItems([]);
     } finally {
       setIsLoaded(true);
     }
-  }, []);
+  }, [authLoading, wishlistStorageKey]);
 
-  // Save wishlist to localStorage
+  // Save wishlist to user's own localStorage
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !wishlistStorageKey) return;
 
     try {
       localStorage.setItem(
-        WISHLIST_STORAGE_KEY,
+        wishlistStorageKey,
         JSON.stringify(wishlistItems)
       );
     } catch (error) {
-      console.error("Failed to save wishlist:", error);
-    }
-  }, [wishlistItems, isLoaded]);
-
-  // Add product
-  const addToWishlist = (product: Product) => {
-    setWishlistItems((currentItems) => {
-      const alreadyExists = currentItems.some(
-        (item) => item.id === product.id
+      console.error(
+        "Failed to save wishlist:",
+        error
       );
+    }
+  }, [
+    wishlistItems,
+    isLoaded,
+    wishlistStorageKey,
+  ]);
+
+  // Add product to wishlist
+  const addToWishlist = (product: Product) => {
+    if (!user) return;
+
+    setWishlistItems((currentItems) => {
+      const alreadyExists =
+        currentItems.some(
+          (item) => item.id === product.id
+        );
 
       if (alreadyExists) {
         return currentItems;
       }
 
-      return [...currentItems, product];
+      return [
+        ...currentItems,
+        product,
+      ];
     });
   };
 
-  // Remove product
-  const removeFromWishlist = (productId: number) => {
+  // Remove product from wishlist
+  const removeFromWishlist = (
+    productId: number
+  ) => {
     setWishlistItems((currentItems) =>
       currentItems.filter(
         (item) => item.id !== productId
@@ -97,11 +144,16 @@ export function WishlistProvider({
   };
 
   // Toggle wishlist
-  const toggleWishlist = (product: Product) => {
+  const toggleWishlist = (
+    product: Product
+  ) => {
+    if (!user) return;
+
     setWishlistItems((currentItems) => {
-      const alreadyExists = currentItems.some(
-        (item) => item.id === product.id
-      );
+      const alreadyExists =
+        currentItems.some(
+          (item) => item.id === product.id
+        );
 
       if (alreadyExists) {
         return currentItems.filter(
@@ -109,12 +161,17 @@ export function WishlistProvider({
         );
       }
 
-      return [...currentItems, product];
+      return [
+        ...currentItems,
+        product,
+      ];
     });
   };
 
-  // Check wishlist
-  const isInWishlist = (productId: number) => {
+  // Check if product is in wishlist
+  const isInWishlist = (
+    productId: number
+  ) => {
     return wishlistItems.some(
       (item) => item.id === productId
     );
@@ -125,7 +182,8 @@ export function WishlistProvider({
     setWishlistItems([]);
   };
 
-  const wishlistCount = wishlistItems.length;
+  const wishlistCount =
+    wishlistItems.length;
 
   return (
     <WishlistContext.Provider
@@ -145,7 +203,8 @@ export function WishlistProvider({
 }
 
 export function useWishlist() {
-  const context = useContext(WishlistContext);
+  const context =
+    useContext(WishlistContext);
 
   if (!context) {
     throw new Error(

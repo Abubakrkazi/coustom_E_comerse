@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,7 +11,7 @@ export default function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden w-full bg-[#44f08c] lg:block">
+    <nav  className="hidden w-full bg-[#44f08c] lg:block">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div className="flex min-h-[48px] items-center justify-center">
           <ul className="flex h-full items-center">
@@ -49,3 +50,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
